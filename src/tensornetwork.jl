@@ -29,8 +29,6 @@ struct PlanarTensorNetwork{T<:Integer,T2}
 end
 
 function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
-    m_num = q_num + p_num
-
     edge_pi = collect(1:p_num)
     edge_si = collect(p_num+1:2*p_num)
     edge_qi = collect(2*p_num+1:2*p_num+q_num)
@@ -93,7 +91,6 @@ function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
         vec_tensor[tensor_count] = (N >> (i-1) & 1 == 1) ? true_tensor(T) : false_tensor(T)
         vec_lable[tensor_count] = [m_vec[i]]
     end
-    @show edge_count
-    @show tensor_count
-    @show m_vec
+
+    return 
 end
