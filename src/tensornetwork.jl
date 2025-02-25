@@ -1,8 +1,8 @@
-or_tensor(T::Type) = [[one(T) zero(T); zero(T) zero(T)];;; [zero(T) one(T); one(T) one(T)]]
+# and_tensor(T::Type) = [[one(T) one(T); one(T) zero(T)];;; [zero(T) zero(T); zero(T) one(T)]]
+# xor_tensor(T::Type) = [[one(T) zero(T); zero(T) one(T)];;; [zero(T) one(T); one(T) zero(T)]]
+# or_tensor(T::Type) = [[one(T) zero(T); zero(T) zero(T)];;; [zero(T) one(T); one(T) one(T)]]
 true_tensor(T::Type) = [zero(T); one(T)]
 false_tensor(T::Type) = [one(T); zero(T)]
-and_tensor(T::Type) = [[one(T) one(T); one(T) zero(T)];;; [zero(T) zero(T); zero(T) one(T)]]
-xor_tensor(T::Type) = [[one(T) zero(T); zero(T) one(T)];;; [zero(T) one(T); one(T) zero(T)]]
 one_tensor(T::Type) = [one(T) ;one(T)]
 
 function multiplier_tensor(T::Type)
@@ -22,11 +22,17 @@ function multiplier_tensor(T::Type)
     end
     return mat
 end
-
-struct PlanarTensorNetwork{T<:Integer,T2}
-    pmg::PlanarMultigraph{T}
-    tensors::Dict{T,Array{T2}} # v_id -> tensor
+struct PlanarTensor{T<:Integer,T2}
+    tensor::Array{T2}
+    labels::Vector{T}
+    x::Float64
+    y::Float64
 end
+struct PlanarTensorNetwork{T} 
+    tensors::Vector{PlanarTensor{Int,T}}
+    max_label::Int
+end
+Base.getindex(ptn::PlanarTensorNetwork, i::Int) = ptn.tensors[i]
 
 function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
     edge_pi = collect(1:p_num)
@@ -34,35 +40,38 @@ function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
     edge_qi = collect(2*p_num+1:2*p_num+q_num)
     edge_ci = collect(2*p_num+q_num+1:2*p_num+2*q_num)
 
-    vec_tensor = Dict{Int,Array{T}}()
-    vec_lable = Dict{Int,Vector{Int}}()
-
-    tensor_count = 0
+    ptn = Vector{PlanarTensor{Int,T}}()
     edge_count = 2*p_num+2*q_num
     m_vec = Vector{Int}()
+    x_vec = Vector{Float64}()
+    y_vec = Vector{Float64}()
 
-    for i in edge_pi ∪ edge_qi
-        tensor_count += 1
-        vec_tensor[tensor_count] = one_tensor(T)
-        vec_lable[tensor_count] = [i]
+    for i in edge_pi
+        push!(ptn,PlanarTensor(one_tensor(T),[i],Float64(i),0.0))
     end
 
-    for i in edge_si ∪ edge_ci
-        tensor_count += 1
-        vec_tensor[tensor_count] = false_tensor(T)
-        vec_lable[tensor_count] = [i]
+    for i in edge_qi
+        push!(ptn,PlanarTensor(one_tensor(T),[i],0.0,Float64(i)-2*p_num))
+    end
+
+    for i in edge_si
+        push!(ptn,PlanarTensor(false_tensor(T),[i],i+0.5-p_num,0.0))
+    end
+
+    for i in edge_ci
+        push!(ptn,PlanarTensor(false_tensor(T),[i],0.0,i+0.5-2*p_num-q_num))
     end
 
     for j in 1:q_num, i in 1:p_num
-        tensor_count += 1
-        vec_tensor[tensor_count] = multiplier_tensor(T)
-        vec_lable[tensor_count] = [edge_pi[i], edge_count+1 , edge_qi[j],edge_count+2, edge_ci[j], edge_count+3, edge_si[j], edge_count+4]
+        push!(ptn,PlanarTensor(multiplier_tensor(T),[edge_pi[i], edge_count+1 , edge_qi[j],edge_count+2, edge_ci[j], edge_count+3, edge_si[i], edge_count+4],Float64(i),Float64(j)))
         edge_pi[i] = edge_count+1
         edge_qi[j] = edge_count+2
         if (i > 1)
             edge_si[i-1] = edge_count+4
         else
             push!(m_vec, edge_count+4)
+            push!(x_vec, 0.0)
+            push!(y_vec, j+0.75)
         end
         
         if i < q_num
@@ -74,23 +83,55 @@ function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
     end
 
     for i in 1:p_num
-        tensor_count += 1
-        vec_tensor[tensor_count] = one_tensor(T)
-        vec_lable[tensor_count] = [edge_pi[i]]
+        push!(ptn,PlanarTensor(one_tensor(T),[edge_pi[i]],Float64(i),q_num+1.0))
         push!(m_vec,edge_si[i])
+        push!(x_vec,i+0.5)
+        push!(y_vec,q_num+1.0)
     end
 
     for j in 1:q_num
-        tensor_count += 1
-        vec_tensor[tensor_count] = one_tensor(T)
-        vec_lable[tensor_count] = [edge_qi[j]]
+        push!(ptn,PlanarTensor(one_tensor(T),[edge_qi[j]],p_num+1.0,Float64(j)))
     end
 
     for i in 1:length(m_vec)
-        tensor_count += 1
-        vec_tensor[tensor_count] = (N >> (i-1) & 1 == 1) ? true_tensor(T) : false_tensor(T)
-        vec_lable[tensor_count] = [m_vec[i]]
+        push!(ptn,PlanarTensor((N >> (i-1) & 1 == 1) ? true_tensor(T) : false_tensor(T),[m_vec[i]],x_vec[i],y_vec[i]))
     end
-
-    return 
+    return PlanarTensorNetwork(ptn,edge_count)
 end
+
+
+# isless(A::PlanarTensor, B::PlanarTensor) = lt(TensorOrder, A, B)
+# sortperm(TN::Vector{PlanarTensor}) = Base.sortperm(TN.tensors, order=TensorOrder)
+# issorted(TN::Vector{PlanarTensor}) = Base.issorted(TN.tensors, order=TensorOrder)
+
+# # Base.sort!(TN::PlanarTensorNetwork) = Base.sort!(TN.tensors)
+# function sort!(TN::PlanarTensorNetwork)
+#     issorted(TN.tensors) && return TN
+#     σ = sortperm(TN.tensors)
+#     permute!(TN.tensors, σ)
+#     return TN
+# end
+
+function sort_ptn(ptn::PlanarTensorNetwork)
+    l2t = label2tensor(ptn)
+    uncontracted = collect(1:length(ptn.tensors))
+    x = 0.0
+    y = 0.0
+    _,pos = findmin(v -> (ptn[v].x-x)^2+(ptn[v].y-y)^2, uncontracted)
+    setdiff!(uncontracted, pos)
+    neighbors = mapreduce(l->l2t[l],∪, ptn[pos].labels)
+    setdiff!(neighbors, pos)
+
+    contracted = [pos]
+
+    while !isempty(uncontracted)
+        _,pos = findmin(v -> (ptn[v].x-x)^2+(ptn[v].y-y)^2, neighbors)
+        pos = neighbors[pos]
+        setdiff!(uncontracted, pos)
+        neighbors = mapreduce(l->l2t[l],∪, ptn[pos].labels) ∪ neighbors
+        push!(contracted, pos)
+        setdiff!(neighbors, contracted)
+    end
+    return PlanarTensorNetwork([ptn[i] for i in contracted],ptn.max_label)
+end
+label2tensor(ptn::PlanarTensorNetwork) = [[i for (i,t) ∈ enumerate(ptn.tensors) if  l ∈ t.labels] for l in 1:ptn.max_label]

@@ -1,72 +1,46 @@
 using Test
 using TropicalSweepContractor
-using TropicalSweepContractor.SweepContractor
-using TropicalSweepContractor: and_tensor, true_tensor, false_tensor, or_tensor, xor_tensor, one_tensor,multiplier_tensor,factoring_tensornetworks
-
-@testset "basic tensors" begin
-    # C = A and B
-    LTN = LabelledTensorNetwork{Char,Float64}()
-    LTN['D'] = Tensor(['A','B','C'],and_tensor(Float64),1.0,2.0)
-    LTN['A'] = Tensor(['D'], true_tensor(Float64), 0.0, 0.0)
-    LTN['B'] = Tensor(['D'], false_tensor(Float64), 1.0, 0.0)
-    LTN['C'] = Tensor(['D'], false_tensor(Float64), 0.0, 1.0)
-
-    sweep = sweep_contract(LTN,2,4)
-    @test ldexp(sweep...) == 1.0
-
-    # C = A or B
-    LTN = LabelledTensorNetwork{Char,Float64}()
-    LTN['D'] = Tensor(['A','B','C'],or_tensor(Float64),1.0,2.0)
-    LTN['A'] = Tensor(['D'], true_tensor(Float64), 0.0, 0.0)
-    LTN['B'] = Tensor(['D'], false_tensor(Float64), 1.0, 0.0)
-    LTN['C'] = Tensor(['D'], true_tensor(Float64), 0.0, 1.0)
-
-    sweep = sweep_contract(LTN,2,4)
-    @test ldexp(sweep...) == 1.0
-
-    # C = A xor B
-    LTN = LabelledTensorNetwork{Char,Float64}()
-    LTN['D'] = Tensor(['A','B','C'],xor_tensor(Float64),1.0,2.0)
-    LTN['A'] = Tensor(['D'], true_tensor(Float64), 0.0, 0.0)
-    LTN['B'] = Tensor(['D'], true_tensor(Float64), 1.0, 0.0)
-    LTN['C'] = Tensor(['D'], false_tensor(Float64), 0.0, 1.0)
-
-    sweep = sweep_contract(LTN,2,4)
-    @test ldexp(sweep...) == 1.0
-end
-
+using TropicalSweepContractor: multiplier_tensor,PlanarTensorNetwork,PlanarTensor
+using TropicalNumbers
 @testset "multiplier tensor" begin
     mat = multiplier_tensor(Float64)
-    LTN = LabelledTensorNetwork{String,Float64}()
-    LTN["A"] = Tensor(["pi","po","qi","qo","ci","co","si","so"],mat,1.0,2.0)
-    LTN["pi"] = Tensor(["A"],false_tensor(Float64),0.0,0.0)
-    LTN["po"] = Tensor(["A"],false_tensor(Float64),1.0,0.0)
-    LTN["qi"] = Tensor(["A"],true_tensor(Float64),2.0,0.0)
-    LTN["qo"] = Tensor(["A"],true_tensor(Float64),3.0,0.0)
-    LTN["ci"] = Tensor(["A"],true_tensor(Float64),4.0,0.0)
-    LTN["co"] = Tensor(["A"],true_tensor(Float64),5.0,0.0)
-    LTN["si"] = Tensor(["A"],true_tensor(Float64),6.0,0.0)
-    LTN["so"] = Tensor(["A"],false_tensor(Float64),7.0,0.0)
-
-    sweep = sweep_contract(LTN,2,4)
-    @test ldexp(sweep...) == 1.0
-
-    mat = multiplier_tensor(Float64)
-    LTN = LabelledTensorNetwork{String,Float64}()
-    LTN["A"] = Tensor(["pi","po","qi","qo","ci","co","si","so"],mat,1.0,2.0)
-    LTN["pi"] = Tensor(["A"],false_tensor(Float64),0.0,0.0)
-    LTN["po"] = Tensor(["A"],false_tensor(Float64),1.0,0.0)
-    LTN["qi"] = Tensor(["A"],true_tensor(Float64),2.0,0.0)
-    LTN["qo"] = Tensor(["A"],false_tensor(Float64),3.0,0.0)
-    LTN["ci"] = Tensor(["A"],true_tensor(Float64),4.0,0.0)
-    LTN["co"] = Tensor(["A"],true_tensor(Float64),5.0,0.0)
-    LTN["si"] = Tensor(["A"],true_tensor(Float64),6.0,0.0)
-    LTN["so"] = Tensor(["A"],false_tensor(Float64),7.0,0.0)
-
-    sweep = sweep_contract(LTN,2,4)
-    @test ldexp(sweep...) == 0.0
+    tag = true
+    for p_i in [1,2],p_o in [1,2],q_i in [1,2],q_o in [1,2],c_i in [1,2],c_o in [1,2],s_i in [1,2],s_o in [1,2]
+        tag2 = (2*(c_o-1)+s_o-1 == (p_i-1)*(q_i-1)+c_i+s_i-2)
+        tag2 = tag2 && (p_i == p_o) && (q_i == q_o)
+        tag = tag && (mat[p_i,p_o,q_i,q_o,c_i,c_o,s_i,s_o] == 1.0) == tag2
+    end
+    @test tag
 end
 
 @testset "factoring_tensornetwork" begin
-    factoring_tensornetwork(5,5,10)
+    ft = factoring_tensornetwork(2,2,10)
+    @show sweep_contract!(ft)
+
+    ft = factoring_tensornetwork(2,2,2;T = TropicalNumbers.Tropical{Float64})
+    @show sweep_contract!(ft)
+
+    ft = factoring_tensornetwork(3,3,4)
+    @show sweep_contract!(ft)
+end
+
+@testset "ABCD" begin
+    using Random
+    Random.seed!(1234)
+    tensorA = PlanarTensor(rand(3,3,2),[1,5,6],0.0,1.0)
+    tensorB = PlanarTensor(rand(3,3,3),[1,2,4],0.0,0.0)
+    tensorC = PlanarTensor(rand(3,3),[2,3],1.0,0.0)
+    tensorD = PlanarTensor(rand(3,3,3,2),[3,4,5,6],1.0,1.0)
+    ptn = PlanarTensorNetwork([
+        tensorA,
+        tensorB,
+        tensorC,
+        tensorD
+    ],6)
+    brute = 0.0
+    for e1=1:3, e2=1:3, e3=1:3, e4=1:3, e5=1:3, e6=1:2
+        brute += tensorA.tensor[e1,e5,e6]*tensorB.tensor[e1,e2,e4]*tensorC.tensor[e2,e3]*tensorD.tensor[e3,e4,e5,e6]
+    end
+
+    @test brute ≈ sweep_contract!(ptn) atol=1e-10
 end
