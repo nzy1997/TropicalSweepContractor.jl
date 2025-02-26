@@ -18,7 +18,7 @@ end
     @show sweep_contract!(ft,40,40)
 
     ft = factoring_tensornetwork(2,2,10;T = TropicalNumbers.TropicalAndOr)
-    @show sweep_contract!(ft,20,20)
+    @show sweep_contract!(ft,40,40)
 
     ft = factoring_tensornetwork(3,3,4)
     @show sweep_contract!(ft)
