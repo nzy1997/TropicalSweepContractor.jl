@@ -14,14 +14,11 @@ using TropicalNumbers
 end
 
 @testset "factoring_tensornetwork" begin
-    ft = factoring_tensornetwork(5,5,899)
-    @show sweep_contract!(ft,40,40)
-
     ft = factoring_tensornetwork(2,2,10;T = TropicalNumbers.TropicalAndOr)
-    @show sweep_contract!(ft,40,40)
+    @test sweep_contract!(ft,40,40) == false
 
-    ft = factoring_tensornetwork(3,3,4)
-    @show sweep_contract!(ft)
+    ft = factoring_tensornetwork(2,2,17;T = TropicalNumbers.TropicalAndOr)
+    @test sweep_contract!(ft,40,40) == true
 end
 
 @testset "ABCD" begin
@@ -41,7 +38,6 @@ end
     for e1=1:3, e2=1:3, e3=1:3, e4=1:3, e5=1:3, e6=1:2
         brute += tensorA.tensor[e1,e5,e6]*tensorB.tensor[e1,e2,e4]*tensorC.tensor[e2,e3]*tensorD.tensor[e3,e4,e5,e6]
     end
-    @show brute
-    @show sweep_contract!(ptn,3,3)
+
     @test brute ≈ sweep_contract!(ptn,3,3) atol=1e-10
 end

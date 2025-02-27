@@ -100,18 +100,6 @@ function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
 end
 
 
-# isless(A::PlanarTensor, B::PlanarTensor) = lt(TensorOrder, A, B)
-# sortperm(TN::Vector{PlanarTensor}) = Base.sortperm(TN.tensors, order=TensorOrder)
-# issorted(TN::Vector{PlanarTensor}) = Base.issorted(TN.tensors, order=TensorOrder)
-
-# # Base.sort!(TN::PlanarTensorNetwork) = Base.sort!(TN.tensors)
-# function sort!(TN::PlanarTensorNetwork)
-#     issorted(TN.tensors) && return TN
-#     σ = sortperm(TN.tensors)
-#     permute!(TN.tensors, σ)
-#     return TN
-# end
-
 function sort_ptn(ptn::PlanarTensorNetwork)
     l2t = label2tensor(ptn)
     uncontracted = collect(1:length(ptn.tensors))

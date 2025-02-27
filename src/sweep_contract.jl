@@ -97,11 +97,8 @@ function sweep_contract!(ptn::PlanarTensorNetwork{T}, χ::Int, τ::Int) where T
             end
             mps_edges2mps = Dict{Int,Int}(n=>i for (i,n) ∈ enumerate(mps_edges))
 
-            @show size.(MPS_t,3)
             if any(size.(MPS_t,3).>τ)
                 truncMPS!(MPS_t, χ)
-                @show "after trunc"
-                @show size.(MPS_t,3)
             end
         end
     end

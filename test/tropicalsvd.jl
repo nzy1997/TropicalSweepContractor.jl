@@ -36,7 +36,7 @@ end
     a = [TropicalAndOr(rand()>0.5) for i in 1:m, j in 1:k]
     b = [TropicalAndOr(rand()>0.5) for i in 1:k, j in 1:n]
     c = a*b
-    a,b,k = bisec_svd(c)
+    k,a,b = bisec_svd(c)
     @test c == a*b
     @test k == 4
 end

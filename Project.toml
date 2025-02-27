@@ -9,6 +9,7 @@ HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OMEinsum = "ebe7aa44-baf0-506c-a96f-8464559b3922"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 TropicalNumbers = "b3a74e9c-7526-4576-a4eb-79c0d4c32334"
 
 [compat]
@@ -17,6 +18,7 @@ HiGHS = "1.13.0"
 JuMP = "1.24.0"
 LinearAlgebra = "1.11.0"
 OMEinsum = "0.8.4"
+Random = "1.11.0"
 TropicalNumbers = "0.6.2"
 julia = "1"
 
