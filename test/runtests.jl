@@ -1,8 +1,8 @@
 using TropicalSweepContractor
 using Test
 
-@testset "tensornetwork.jl" begin
-    include("tensornetwork.jl")
+@testset "factoring.jl" begin
+    include("factoring.jl")
 end
 
 @testset "tropicalsvd.jl" begin
