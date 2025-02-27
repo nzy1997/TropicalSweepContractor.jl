@@ -1,6 +1,7 @@
 using Test
 using TropicalSweepContractor
-using TropicalSweepContractor: multiplier_tensor,PlanarTensorNetwork,PlanarTensor
+using TropicalSweepContractor: multiplier_tensor
+using TropicalSweepContractor.SweepContract: PlanarTensorNetwork,PlanarTensor
 using TropicalNumbers
 @testset "multiplier tensor" begin
     mat = multiplier_tensor(Float64)

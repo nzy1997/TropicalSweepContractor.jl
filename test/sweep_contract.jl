@@ -1,6 +1,6 @@
 using Test
 using TropicalSweepContractor
-using TropicalSweepContractor:splitMPStensor,MPS
+using TropicalSweepContractor.SweepContract:splitMPStensor,MPS
 
 @testset "splitMPStensor" begin
     x = rand(Int,2,3,4,5,6)

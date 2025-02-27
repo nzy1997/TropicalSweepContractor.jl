@@ -22,17 +22,6 @@ function multiplier_tensor(T::Type)
     end
     return mat
 end
-struct PlanarTensor{T<:Integer,T2}
-    tensor::Array{T2}
-    labels::Vector{T}
-    x::Float64
-    y::Float64
-end
-struct PlanarTensorNetwork{T} 
-    tensors::Vector{PlanarTensor{Int,T}}
-    max_label::Int
-end
-Base.getindex(ptn::PlanarTensorNetwork, i::Int) = ptn.tensors[i]
 
 function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
     edge_pi = collect(1:p_num)
@@ -98,28 +87,3 @@ function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
     end
     return PlanarTensorNetwork(ptn,edge_count)
 end
-
-
-function sort_ptn(ptn::PlanarTensorNetwork)
-    l2t = label2tensor(ptn)
-    uncontracted = collect(1:length(ptn.tensors))
-    x = 0.0
-    y = 0.0
-    _,pos = findmin(v -> (ptn[v].x-x)^2+(ptn[v].y-y)^2, uncontracted)
-    setdiff!(uncontracted, pos)
-    neighbors = mapreduce(l->l2t[l],∪, ptn[pos].labels)
-    setdiff!(neighbors, pos)
-
-    contracted = [pos]
-
-    while !isempty(uncontracted)
-        _,pos = findmin(v -> (ptn[v].x-x)^2+(ptn[v].y-y)^2, neighbors)
-        pos = neighbors[pos]
-        setdiff!(uncontracted, pos)
-        neighbors = mapreduce(l->l2t[l],∪, ptn[pos].labels) ∪ neighbors
-        push!(contracted, pos)
-        setdiff!(neighbors, contracted)
-    end
-    return PlanarTensorNetwork([ptn[i] for i in contracted],ptn.max_label)
-end
-label2tensor(ptn::PlanarTensorNetwork) = [[i for (i,t) ∈ enumerate(ptn.tensors) if  l ∈ t.labels] for l in 1:ptn.max_label]

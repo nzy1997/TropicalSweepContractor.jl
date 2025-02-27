@@ -1,3 +1,21 @@
+module SweepContract
+using OMEinsum
+using LinearAlgebra
+
+export PlanarTensor, PlanarTensorNetwork, sweep_contract!,truncMPS!,splitMPStensor,MPS,MPSTensor
+
+struct PlanarTensor{T<:Integer,T2}
+    tensor::Array{T2}
+    labels::Vector{T}
+    x::Float64
+    y::Float64
+end
+struct PlanarTensorNetwork{T} 
+    tensors::Vector{PlanarTensor{Int,T}}
+    max_label::Int
+end
+Base.getindex(ptn::PlanarTensorNetwork, i::Int) = ptn.tensors[i]
+
 const MPSTensor{T} = Array{T,3}
 const MPS{T} = Vector{MPSTensor{T}}
 
@@ -151,12 +169,27 @@ function get_eincode(mps_vec, tensor_ix,ind_up)
     return EinCode([mps_ix..., tensor_ix], [-1,ind_up...,-length(mps_vec)-1])
 end
 
-function truncMPS!(M::MPS{TropicalAndOr}, χ::Int64)
-    for i in 1:length(M)-1
-        X = reshape(M[i],(size(M[i],1)*size(M[i],2),size(M[i],3)))
-        k,a,b = bisec_svd(X)
-        M[i] = reshape(a,(size(M[i],1),size(M[i],2),k))
-        M[i+1] = reshape(b*reshape(M[i+1], (size(M[i+1],1),
-            size(M[i+1],2)*size(M[i+1],3))), (k,size(M[i+1],2),size(M[i+1],3)))
+function sort_ptn(ptn::PlanarTensorNetwork)
+    l2t = label2tensor(ptn)
+    uncontracted = collect(1:length(ptn.tensors))
+    x = 0.0
+    y = 0.0
+    _,pos = findmin(v -> (ptn[v].x-x)^2+(ptn[v].y-y)^2, uncontracted)
+    setdiff!(uncontracted, pos)
+    neighbors = mapreduce(l->l2t[l],∪, ptn[pos].labels)
+    setdiff!(neighbors, pos)
+
+    contracted = [pos]
+
+    while !isempty(uncontracted)
+        _,pos = findmin(v -> (ptn[v].x-x)^2+(ptn[v].y-y)^2, neighbors)
+        pos = neighbors[pos]
+        setdiff!(uncontracted, pos)
+        neighbors = mapreduce(l->l2t[l],∪, ptn[pos].labels) ∪ neighbors
+        push!(contracted, pos)
+        setdiff!(neighbors, contracted)
     end
+    return PlanarTensorNetwork([ptn[i] for i in contracted],ptn.max_label)
+end
+label2tensor(ptn::PlanarTensorNetwork) = [[i for (i,t) ∈ enumerate(ptn.tensors) if  l ∈ t.labels] for l in 1:ptn.max_label]
 end
