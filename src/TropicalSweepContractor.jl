@@ -4,6 +4,8 @@ module TropicalSweepContractor
 using TropicalNumbers
 using JuMP
 using HiGHS
+using GenericTensorNetworks
+using LinearAlgebra
 
 export factoring_tensornetwork,PlanarTensorNetwork
 
@@ -13,4 +15,5 @@ include("sweep_contract.jl")
 using .SweepContract
 include("factoring.jl")
 include("tropicalsvd.jl")
+include("mod2.jl")
 end

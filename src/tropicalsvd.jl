@@ -55,7 +55,7 @@ function bisec_svd(C::Matrix{TropicalAndOr})
     return kmin,success_a,success_b
 end
 
-function truncMPS!(M::MPS{TropicalAndOr}, χ::Int64)
+function SweepContract.truncMPS!(M::MPS{TropicalAndOr}, χ::Int64)
     for i in 1:length(M)-1
         X = reshape(M[i],(size(M[i],1)*size(M[i],2),size(M[i],3)))
         k,a,b = bisec_svd(X)

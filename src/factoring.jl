@@ -63,7 +63,7 @@ function factoring_tensornetwork(p_num,q_num,N;T::Type = Float64)
             push!(y_vec, j+0.75)
         end
         
-        if i < q_num
+        if i < p_num
             edge_ci[j] = edge_count+3
         else
             edge_si[i] = edge_count+3

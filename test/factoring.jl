@@ -2,6 +2,9 @@ using Test
 using TropicalSweepContractor
 using TropicalSweepContractor: multiplier_tensor
 using TropicalNumbers
+using GenericTensorNetworks
+using Primes
+
 @testset "multiplier tensor" begin
     mat = multiplier_tensor(Float64)
     tag = true
@@ -17,7 +20,24 @@ end
     ft = factoring_tensornetwork(2,2,10;T = TropicalNumbers.TropicalAndOr)
     @test sweep_contract!(ft,40,40) == false
 
-    ft = factoring_tensornetwork(2,2,17;T = TropicalNumbers.TropicalAndOr)
-    @test sweep_contract!(ft,40,40) == true
+    ft = factoring_tensornetwork(1,2,10;T = TropicalNumbers.TropicalAndOr)
+    @test sweep_contract!(ft,10,10) == true
 end
 
+@testset "mod2" begin
+    ft = factoring_tensornetwork(5,5,29*31;T = Mod{1021,Int})
+    @test sweep_contract!(ft,1,1) == 2
+
+    ft = factoring_tensornetwork(4,5,31*13;T = Mod{1021,Int})
+    @test sweep_contract!(ft,1,1) == 1
+
+    ft = factoring_tensornetwork(5,5,24;T = Mod{1021,Int})
+    @test sweep_contract!(ft,1,1) == 8
+end
+
+@testset "mod2" begin
+    d1 = 10
+    d2 = 9
+    ft = factoring_tensornetwork(d1,d2,prevprime(2^d1)*prevprime(2^d2);T = Mod{2,Int})
+    @show sweep_contract!(ft,1,1) 
+end
