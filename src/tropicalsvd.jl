@@ -57,8 +57,29 @@ end
 
 function SweepContract.truncMPS!(M::MPS{TropicalAndOr}, χ::Int64)
     for i in 1:length(M)-1
+        if size(M[i],3) == 1
+            continue
+        end
         X = reshape(M[i],(size(M[i],1)*size(M[i],2),size(M[i],3)))
         k,a,b = bisec_svd(X)
+        M[i] = reshape(a,(size(M[i],1),size(M[i],2),k))
+        M[i+1] = reshape(b*reshape(M[i+1], (size(M[i+1],1),
+            size(M[i+1],2)*size(M[i+1],3))), (k,size(M[i+1],2),size(M[i+1],3)))
+    end
+end
+
+
+function SweepContract.truncMPS!(M::MPS{TropicalAndOr}, χ::Float64)
+    for i in 1:length(M)-1
+        if size(M[i],3) == 1
+            continue
+        end
+        X = reshape(M[i],(size(M[i],1)*size(M[i],2),size(M[i],3)))
+        a,b = find_formal_concepts(X)
+        k = size(a,2)
+        if k > size(M[i],3)
+            continue
+        end
         M[i] = reshape(a,(size(M[i],1),size(M[i],2),k))
         M[i+1] = reshape(b*reshape(M[i+1], (size(M[i+1],1),
             size(M[i+1],2)*size(M[i+1],3))), (k,size(M[i+1],2),size(M[i+1],3)))

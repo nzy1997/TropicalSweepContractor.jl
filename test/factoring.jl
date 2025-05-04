@@ -22,6 +22,9 @@ end
 
     ft = factoring_tensornetwork(1,2,10;T = TropicalNumbers.TropicalAndOr)
     @test sweep_contract!(ft,10,10) == true
+
+    ft = factoring_tensornetwork(5,5,899;T = TropicalNumbers.TropicalAndOr)
+    @test sweep_contract!(ft,1,1.0) == true
 end
 
 @testset "mod2" begin
@@ -41,3 +44,6 @@ end
     ft = factoring_tensornetwork(d1,d2,prevprime(2^d1)*prevprime(2^d2);T = Mod{2,Int})
     @show sweep_contract!(ft,1,1) 
 end
+
+ft = factoring_tensornetwork(10,10,1021*1019;T = TropicalNumbers.TropicalAndOr)
+sweep_contract!(ft,1.0,1) 

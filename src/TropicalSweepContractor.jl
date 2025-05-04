@@ -6,6 +6,7 @@ using JuMP
 using HiGHS
 using GenericTensorNetworks
 using LinearAlgebra
+using BooleanInference
 
 export factoring_tensornetwork,PlanarTensorNetwork
 

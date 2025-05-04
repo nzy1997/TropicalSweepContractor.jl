@@ -57,7 +57,7 @@ function truncMPS!(M::MPS{T}, χ::Int64) where T <: Real
     return M
 end
 
-function sweep_contract!(ptn::PlanarTensorNetwork{T}, χ::Int, τ::Int) where T
+function sweep_contract!(ptn::PlanarTensorNetwork{T}, χ, τ::Int) where T
     ptn = sort_ptn(ptn)
 
     l2t = label2tensor(ptn)
@@ -115,7 +115,7 @@ function sweep_contract!(ptn::PlanarTensorNetwork{T}, χ::Int, τ::Int) where T
             end
             mps_edges2mps = Dict{Int, Int}(n => i for (i, n) ∈ enumerate(mps_edges))
 
-            @info "start truncation"
+            @info "check truncation"
             @show size.(MPS_t,3)
             if any(size.(MPS_t, 3) .> τ)
                 truncMPS!(MPS_t, χ)
@@ -172,11 +172,9 @@ function get_eincode(mps_vec, tensor_ix, ind_up)
     return EinCode([mps_ix..., tensor_ix], [-1, ind_up..., -length(mps_vec) - 1])
 end
 
-function sort_ptn(ptn::PlanarTensorNetwork)
+function sort_ptn(ptn::PlanarTensorNetwork; x = 0.0, y = 10.0)
     l2t = label2tensor(ptn)
     uncontracted = collect(1:length(ptn.tensors))
-    x = 0.0
-    y = 0.0
     _, pos = findmin(v -> (ptn[v].x - x)^2 + (ptn[v].y - y)^2, uncontracted)
     setdiff!(uncontracted, pos)
     neighbors = mapreduce(l -> l2t[l], ∪, ptn[pos].labels)
