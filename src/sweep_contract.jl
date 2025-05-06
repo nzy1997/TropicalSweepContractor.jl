@@ -19,7 +19,7 @@ Base.getindex(ptn::PlanarTensorNetwork, i::Int) = ptn.tensors[i]
 const MPSTensor{T} = Array{T, 3}
 const MPS{T} = Vector{MPSTensor{T}}
 
-function truncMPS!(M::MPS{T}, χ::Int64) where T <: Real
+function truncMPS!(M::MPS{T}, χ::Int64;tranc_tol = 1e-6) where T <: Real
     # Put the MPS in canonical form using the QR decomposition, sweeping left-to-right
     for i ∈ 1:length(M)-1
         X = reshape(M[i], (size(M[i], 1) * size(M[i], 2), size(M[i], 3)))
@@ -45,6 +45,7 @@ function truncMPS!(M::MPS{T}, χ::Int64) where T <: Real
             F = LinearAlgebra.svd!(X; alg = LinearAlgebra.QRIteration())
             (u, s, v) = (F.U, F.S, F.V)
         end
+        s = s[s.>tranc_tol]
         b = min(length(s), χ)
         u = u[:, 1:b]
         s = s[1:b]
@@ -172,10 +173,12 @@ function get_eincode(mps_vec, tensor_ix, ind_up)
     return EinCode([mps_ix..., tensor_ix], [-1, ind_up..., -length(mps_vec) - 1])
 end
 
-function sort_ptn(ptn::PlanarTensorNetwork; x = 0.0, y = 10.0)
+function sort_ptn(ptn::PlanarTensorNetwork; x = 0.0, y = 0.0)
+    # f = v -> (ptn[v].x - x)^2 + (ptn[v].y - y)^2 
+    f = v -> (ptn[v].x, ptn[v].y)
     l2t = label2tensor(ptn)
     uncontracted = collect(1:length(ptn.tensors))
-    _, pos = findmin(v -> (ptn[v].x - x)^2 + (ptn[v].y - y)^2, uncontracted)
+    _, pos = findmin(f, uncontracted)
     setdiff!(uncontracted, pos)
     neighbors = mapreduce(l -> l2t[l], ∪, ptn[pos].labels)
     setdiff!(neighbors, pos)
@@ -183,7 +186,7 @@ function sort_ptn(ptn::PlanarTensorNetwork; x = 0.0, y = 10.0)
     contracted = [pos]
 
     while !isempty(uncontracted)
-        _, pos = findmin(v -> (ptn[v].x - x)^2 + (ptn[v].y - y)^2, neighbors)
+        _, pos = findmin(f, neighbors)
         pos = neighbors[pos]
         setdiff!(uncontracted, pos)
         neighbors = mapreduce(l -> l2t[l], ∪, ptn[pos].labels) ∪ neighbors
